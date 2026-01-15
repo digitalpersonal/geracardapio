@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { MenuForm } from './components/MenuForm';
 import { ArtPreview } from './components/ArtPreview';
+import { InstallPWA } from './components/InstallPWA';
 import { CreativeData, GeneratedContent, AppStatus, ImageRefinement } from './types';
 import { generateMarmitaContent, regenerateCreativeImage } from './services/geminiService';
-import { Palette } from 'lucide-react';
+import { Palette, MessageCircle, Heart } from 'lucide-react';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
@@ -110,10 +112,38 @@ const App: React.FC = () => {
         )}
       </main>
 
-      <footer className="text-center text-gray-500 text-sm mt-12 pb-4 leading-relaxed">
-        &copy; {new Date().getFullYear()} geracardapio.<br />
-        Desenvolvido por Multiplus - Sistemas Inteligentes<br />
-        Silvio T. de Sá Filho
+      <footer className="mt-16 pb-12 px-4 border-t border-brand-100/50 bg-gradient-to-b from-transparent to-brand-50/50">
+        <div className="max-w-md mx-auto flex flex-col items-center text-center space-y-6">
+          
+          {/* Action Area: Layout vertical estrito (flex-col) para colocar Instalar em cima do WhatsApp */}
+          <div className="flex flex-col items-center justify-center gap-3 w-full max-w-sm mx-auto">
+            {/* O componente InstallPWA aparecerá aqui se o navegador permitir a instalação */}
+            <InstallPWA />
+            
+            <a 
+              href="https://wa.me/5535991048020?text=Ol%C3%A1%2C%20gostaria%20de%20falar%20sobre%20o%20GeraCardapio!"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-[#25D366] text-white px-6 py-4 rounded-xl shadow-lg hover:brightness-105 transition-all font-bold text-xs uppercase tracking-wide border border-[#20bd5a] w-full justify-center"
+            >
+              <MessageCircle size={18} /> Falar com Desenvolvedor
+            </a>
+          </div>
+
+          <div className="pt-6">
+            <p className="text-gray-400 text-xs font-medium flex items-center justify-center gap-1 mb-1">
+              Feito com <Heart size={10} className="text-red-400 fill-red-400" /> para empreendedores
+            </p>
+            <p className="text-gray-500 text-sm font-semibold">
+              &copy; {new Date().getFullYear()} geracardapio
+            </p>
+            <p className="text-gray-400 text-xs mt-1">
+              Desenvolvido por Multiplus - Sistemas Inteligentes<br />
+              Silvio T. de Sá Filho
+            </p>
+          </div>
+
+        </div>
       </footer>
     </div>
   );
