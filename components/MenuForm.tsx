@@ -180,7 +180,7 @@ export const MenuForm: React.FC<MenuFormProps> = ({ onSubmit, status }) => {
         <p className="text-gray-500 text-sm mt-1">Preencha os dados abaixo para ativar o botão.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 pb-24 md:pb-0">
+      <form onSubmit={handleSubmit} className="space-y-6 pb-32">
         
         {/* Identidade */}
         <div className="space-y-3">
@@ -312,7 +312,7 @@ export const MenuForm: React.FC<MenuFormProps> = ({ onSubmit, status }) => {
         </div>
 
         {/* Botão Flutuante/Fixo */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-sm border-t border-gray-200 z-50 md:relative md:bg-transparent md:border-0 md:p-0 md:z-auto">
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-sm border-t border-gray-200 z-[100] shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
             <div className="max-w-xl mx-auto">
                 <button
                 type="submit"
@@ -342,7 +342,7 @@ export const MenuForm: React.FC<MenuFormProps> = ({ onSubmit, status }) => {
                 )}
                 </button>
                 {!isFormValid && (
-                    <p className="text-[10px] text-center text-gray-400 mt-2 font-medium md:hidden">
+                    <p className="text-[10px] text-center text-gray-400 mt-2 font-medium">
                         Preencha: Marca, Prato e Itens da Marmita
                     </p>
                 )}

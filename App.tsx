@@ -25,9 +25,11 @@ const App: React.FC = () => {
       const result = await generateMarmitaContent(data);
       setGeneratedContent(result);
       setStatus(AppStatus.SUCCESS);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError("Ocorreu um erro ao gerar a arte. Verifique sua chave de API e tente novamente.");
+      // Exibe a mensagem real do erro para facilitar o diagnóstico
+      const errorMessage = err?.message || "Ocorreu um erro desconhecido ao gerar a arte.";
+      setError(`Erro na IA: ${errorMessage}`);
       setStatus(AppStatus.ERROR);
     }
   };
@@ -43,9 +45,9 @@ const App: React.FC = () => {
         ...generatedContent,
         imageUrl: newImageUrl
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Refinement Error:", err);
-      alert("Erro ao refinar a imagem. Tente novamente.");
+      alert(`Erro ao refinar imagem: ${err?.message || 'Tente novamente.'}`);
     } finally {
       setIsRefining(false);
     }
@@ -83,9 +85,18 @@ const App: React.FC = () => {
       <main className="max-w-6xl mx-auto px-4 py-8 md:py-12">
         
         {status === AppStatus.ERROR && (
-          <div className="bg-red-50 text-red-700 p-4 rounded-lg mb-8 border border-red-200 text-center">
-            {error}
-            <button onClick={() => setStatus(AppStatus.IDLE)} className="block mx-auto mt-2 text-sm underline">Tentar Novamente</button>
+          <div className="bg-red-50 text-red-700 p-6 rounded-xl mb-8 border border-red-200 text-center shadow-sm">
+            <h3 className="font-bold text-lg mb-2">Ops! Algo deu errado.</h3>
+            <p className="mb-4 text-sm font-mono bg-white/50 p-2 rounded inline-block">{error}</p>
+            <button 
+              onClick={() => handleGenerate(menuData!)} 
+              className="block mx-auto px-6 py-2 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg font-bold text-sm transition-colors"
+            >
+              Tentar Novamente
+            </button>
+            <button onClick={() => setStatus(AppStatus.IDLE)} className="block mx-auto mt-4 text-xs text-gray-500 underline">
+              Voltar ao início
+            </button>
           </div>
         )}
 
@@ -115,9 +126,8 @@ const App: React.FC = () => {
       <footer className="mt-16 pb-12 px-4 border-t border-brand-100/50 bg-gradient-to-b from-transparent to-brand-50/50">
         <div className="max-w-md mx-auto flex flex-col items-center text-center space-y-6">
           
-          {/* Action Area: Layout vertical estrito (flex-col) para colocar Instalar em cima do WhatsApp */}
+          {/* Action Area */}
           <div className="flex flex-col items-center justify-center gap-3 w-full max-w-sm mx-auto">
-            {/* O componente InstallPWA aparecerá aqui se o navegador permitir a instalação */}
             <InstallPWA />
             
             <a 
