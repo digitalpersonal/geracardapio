@@ -1,12 +1,15 @@
 
 {
-  "name": "geracardapio",
-  "short_name": "geracardapio",
+  "id": "geracardapio-app-v1",
+  "name": "GeraCardapio AI",
+  "short_name": "GeraCardapio",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#f97316",
   "orientation": "portrait",
+  "description": "Crie artes profissionais para o cardápio do dia com Inteligência Artificial.",
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/7541/7541900.png",
