@@ -1,8 +1,10 @@
+
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { CreativeData, GeneratedContent, ImageRefinement, PriceOption } from '../types';
 import { 
   Download, Copy, RefreshCw, Edit3, Move, Save, Check, Wand2, 
-  Share2, Trash2, Smartphone, Square, ZoomIn, ZoomOut, Maximize 
+  Share2, Trash2, Smartphone, Square, ZoomIn, ZoomOut, Maximize,
+  ImageDown
 } from 'lucide-react';
 
 interface ArtPreviewProps {
@@ -262,10 +264,30 @@ export const ArtPreview: React.FC<ArtPreviewProps> = ({
     setPan({ x: 0, y: 0 });
   };
 
-  const handleDownload = () => {
+  const handleSmartSave = async () => {
     if (!downloadUrl) return;
+
+    // 1. Tentar usar a API de Compartilhamento Nativa (Funciona bem no Mobile para "Salvar Imagem")
+    try {
+        const response = await fetch(downloadUrl);
+        const blob = await response.blob();
+        const file = new File([blob], `cardapio-${data.brandName.replace(/\s+/g, '-')}.png`, { type: 'image/png' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                files: [file],
+                title: `Cardápio ${data.brandName}`,
+                text: 'Confira nosso cardápio de hoje!'
+            });
+            return;
+        }
+    } catch (e) {
+        console.warn("Native share failed, using fallback download.", e);
+    }
+
+    // 2. Fallback: Download tradicional via link
     const link = document.createElement('a');
-    link.download = `marmita-premium-${Date.now()}.png`;
+    link.download = `marmita-${data.brandName.replace(/\s+/g, '-')}-${Date.now()}.png`;
     link.href = downloadUrl;
     link.click();
   };
@@ -274,37 +296,6 @@ export const ArtPreview: React.FC<ArtPreviewProps> = ({
     navigator.clipboard.writeText(editValues.caption);
     setShowCopyFeedback(true);
     setTimeout(() => setShowCopyFeedback(false), 2000);
-  };
-
-  const handleShare = async () => {
-    if (!downloadUrl) return;
-
-    try {
-      // Converte dataURL para Blob e depois para File para permitir compartilhamento da imagem
-      const response = await fetch(downloadUrl);
-      const blob = await response.blob();
-      const file = new File([blob], `marmita-${Date.now()}.png`, { type: 'image/png' });
-
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: `Cardápio ${data.brandName}`,
-          text: editValues.caption
-        });
-      } else if (navigator.share) {
-        // Fallback apenas para texto se o navegador não suportar arquivos no share
-        await navigator.share({
-          title: `Cardápio ${data.brandName}`,
-          text: editValues.caption
-        });
-      } else {
-        alert("O seu navegador não suporta compartilhamento direto. Experimente baixar a arte e copiar a legenda!");
-      }
-    } catch (error) {
-      if ((error as any).name !== 'AbortError') {
-        console.error("Erro ao compartilhar:", error);
-      }
-    }
   };
 
   const triggerUpdateFeedback = () => {
@@ -372,32 +363,28 @@ export const ArtPreview: React.FC<ArtPreviewProps> = ({
         {/* BONDE DE SALVAR E COMPARTILHAR */}
         <div className="space-y-3 px-2">
           <button 
-            onClick={handleDownload}
+            onClick={handleSmartSave}
             disabled={!downloadUrl}
             className="w-full bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white py-6 rounded-2xl font-black shadow-[0_10px_30px_rgba(249,115,22,0.3)] transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3 text-xl disabled:opacity-50"
           >
-            <Download size={28} /> BAIXAR ARTE EM HD
+            <ImageDown size={28} /> SALVAR / BAIXAR ARTE
           </button>
           
-          <div className="grid grid-cols-2 gap-2">
-            <button 
-              onClick={handleShare}
-              disabled={!downloadUrl}
-              className="py-4 rounded-2xl font-bold border-2 bg-brand-50 border-brand-200 text-brand-600 hover:bg-brand-100 transition-all flex items-center justify-center gap-2 shadow-sm"
-            >
-              <Share2 size={20} /> COMPARTILHAR
-            </button>
+          <div className="bg-blue-50 border border-blue-100 p-3 rounded-xl flex gap-3 items-start">
+             <Smartphone className="text-blue-500 shrink-0 mt-0.5" size={18} />
+             <div className="text-xs text-blue-800">
+               <strong>Dica para Celular:</strong> Se o botão acima não abrir sua galeria, <u>pressione e segure</u> na imagem acima até aparecer a opção "Salvar Imagem".
+             </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-2">
             <button 
               onClick={handleCopyCaption}
               className={`py-4 rounded-2xl font-bold border-2 transition-all flex items-center justify-center gap-2 ${showCopyFeedback ? 'bg-green-50 border-green-200 text-green-600 shadow-inner' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm'}`}
             >
-              {showCopyFeedback ? <><Check size={20} /> COPIADA!</> : <><Copy size={20} /> LEGENDA</>}
+              {showCopyFeedback ? <><Check size={20} /> LEGENDA COPIADA!</> : <><Copy size={20} /> COPIAR LEGENDA</>}
             </button>
           </div>
-        </div>
-        
-        <div className="flex items-center justify-center gap-2 text-gray-400 text-[10px] font-medium">
-          <Smartphone size={12} /> Ideal para Instagram Stories e WhatsApp
         </div>
       </div>
 

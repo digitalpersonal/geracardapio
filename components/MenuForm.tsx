@@ -3,9 +3,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { CreativeData, AppStatus, PriceOption } from '../types';
 import { 
   ChefHat, Beef, DollarSign, Store, ImagePlus, X, 
-  LayoutTemplate, Megaphone, Type, Camera, Palette,
-  Plus, Trash2, Link, Bike, Phone, IceCream, Coffee, Move,
-  Tag, MousePointer2, PlusCircle, Utensils
+  Megaphone, Camera,
+  Trash2, Bike, Phone, IceCream, Coffee,
+  Tag, MousePointer2, PlusCircle, Utensils,
+  Lock, Wand2, RefreshCw
 } from 'lucide-react';
 
 interface MenuFormProps {
@@ -166,20 +167,25 @@ export const MenuForm: React.FC<MenuFormProps> = ({ onSubmit, status }) => {
   );
 
   const isGenerating = status === AppStatus.GENERATING;
+  
+  // Validação simplificada: Campos obrigatórios preenchidos?
+  const isFormValid = formData.brandName.trim() !== '' && 
+                      formData.mainDish.trim() !== '' && 
+                      formData.proteins.trim() !== '';
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-5 md:p-8 w-full max-w-xl mx-auto border border-gray-100">
+    <div className="bg-white rounded-2xl shadow-xl p-5 md:p-8 w-full max-w-xl mx-auto border border-gray-100 relative">
       <div className="mb-6 text-center">
-        <h2 className="text-2xl font-bold text-gray-800">Estúdio de Criação de Marmitas</h2>
-        <p className="text-gray-500 text-sm mt-1">Configure sua arte de alta conversão.</p>
+        <h2 className="text-2xl font-bold text-gray-800">Estúdio de Criação</h2>
+        <p className="text-gray-500 text-sm mt-1">Preencha os dados abaixo para ativar o botão.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6 pb-24 md:pb-0">
         
         {/* Identidade */}
         <div className="space-y-3">
           <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
-            <Store size={16} className="text-brand-500" /> Identidade do Restaurante
+            <Store size={16} className="text-brand-500" /> Identidade do Restaurante <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -253,7 +259,7 @@ export const MenuForm: React.FC<MenuFormProps> = ({ onSubmit, status }) => {
         <div className="space-y-5 border-t border-gray-100 pt-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-              <ChefHat size={16} className="text-brand-500" /> Prato Principal do Dia
+              <ChefHat size={16} className="text-brand-500" /> Prato Principal do Dia <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -268,7 +274,7 @@ export const MenuForm: React.FC<MenuFormProps> = ({ onSubmit, status }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-              <Beef size={16} className="text-brand-500" /> Itens da Marmita
+              <Beef size={16} className="text-brand-500" /> Itens da Marmita <span className="text-red-500">*</span>
             </label>
             <textarea
               name="proteins"
@@ -305,18 +311,44 @@ export const MenuForm: React.FC<MenuFormProps> = ({ onSubmit, status }) => {
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={isGenerating}
-          className={`w-full py-4 mt-4 rounded-xl font-bold text-white shadow-lg transition transform active:scale-95 ${isGenerating ? 'bg-gray-400' : 'bg-gradient-to-r from-brand-500 to-brand-600 hover:brightness-110'}`}
-        >
-          {isGenerating ? <span className="flex items-center justify-center gap-2"><RefreshCw className="animate-spin" size={20}/> {loadingText}</span> : 'GERAR ARTE PROFISSIONAL'}
-        </button>
+        {/* Botão Flutuante/Fixo */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-sm border-t border-gray-200 z-50 md:relative md:bg-transparent md:border-0 md:p-0 md:z-auto">
+            <div className="max-w-xl mx-auto">
+                <button
+                type="submit"
+                disabled={!isFormValid || isGenerating}
+                className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all duration-300 flex items-center justify-center gap-2
+                    ${!isFormValid || isGenerating
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed transform-none shadow-none' 
+                        : 'bg-gradient-to-r from-brand-500 to-brand-600 text-white hover:brightness-110 active:scale-95 hover:shadow-brand-500/30'
+                    }
+                `}
+                >
+                {isGenerating ? (
+                    <>
+                        <RefreshCw className="animate-spin" size={24}/>
+                        {loadingText}
+                    </>
+                ) : !isFormValid ? (
+                    <>
+                        <Lock size={20} />
+                        Preencha para Gerar
+                    </>
+                ) : (
+                    <>
+                        <Wand2 size={24} />
+                        GERAR ARTE
+                    </>
+                )}
+                </button>
+                {!isFormValid && (
+                    <p className="text-[10px] text-center text-gray-400 mt-2 font-medium md:hidden">
+                        Preencha: Marca, Prato e Itens da Marmita
+                    </p>
+                )}
+            </div>
+        </div>
       </form>
     </div>
   );
 };
-
-const RefreshCw = ({ className, size }: { className?: string, size?: number }) => (
-  <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.83 6.72 2.27L21 8"/><path d="M21 3v5h-5"/></svg>
-);

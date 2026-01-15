@@ -57,7 +57,6 @@ const generateImage = async (data: CreativeData, refinement?: ImageRefinement): 
         aspectRatio: "9:16"
       },
       temperature: 1,
-      topP: 0.95,
     };
 
     if (refinement?.seed) {
@@ -65,7 +64,7 @@ const generateImage = async (data: CreativeData, refinement?: ImageRefinement): 
     }
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-image-preview',
+      model: 'gemini-2.5-flash-image',
       contents: { parts: [{ text: prompt }] },
       config: generationConfig
     });
@@ -120,7 +119,7 @@ const generateCaption = async (data: CreativeData): Promise<string> => {
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       contents: finalPrompt,
       config: { maxOutputTokens: 800, temperature: 0.85 }
     });
