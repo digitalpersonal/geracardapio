@@ -6,7 +6,7 @@ import {
   Megaphone, Camera,
   Trash2, Bike, Phone, IceCream, Coffee,
   Tag, MousePointer2, PlusCircle, Utensils,
-  Lock, Wand2, RefreshCw
+  Lock, Wand2, RefreshCw, AlertTriangle
 } from 'lucide-react';
 
 interface MenuFormProps {
@@ -167,6 +167,7 @@ export const MenuForm: React.FC<MenuFormProps> = ({ onSubmit, status }) => {
   );
 
   const isGenerating = status === AppStatus.GENERATING;
+  const isError = status === AppStatus.ERROR;
   
   // Validação simplificada: Campos obrigatórios preenchidos?
   const isFormValid = formData.brandName.trim() !== '' && 
@@ -180,7 +181,7 @@ export const MenuForm: React.FC<MenuFormProps> = ({ onSubmit, status }) => {
         <p className="text-gray-500 text-sm mt-1">Preencha os dados abaixo para ativar o botão.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 pb-32">
+      <form onSubmit={handleSubmit} className="space-y-6 pb-40">
         
         {/* Identidade */}
         <div className="space-y-3">
@@ -311,8 +312,8 @@ export const MenuForm: React.FC<MenuFormProps> = ({ onSubmit, status }) => {
           </div>
         </div>
 
-        {/* Botão Flutuante/Fixo */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-sm border-t border-gray-200 z-[100] shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
+        {/* Botão Flutuante/Fixo - Z-INDEX AUMENTADO */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 z-[999] shadow-[0_-5px_20px_rgba(0,0,0,0.1)] pb-[env(safe-area-inset-bottom,20px)]">
             <div className="max-w-xl mx-auto">
                 <button
                 type="submit"
@@ -320,7 +321,9 @@ export const MenuForm: React.FC<MenuFormProps> = ({ onSubmit, status }) => {
                 className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all duration-300 flex items-center justify-center gap-2
                     ${!isFormValid || isGenerating
                         ? 'bg-gray-200 text-gray-400 cursor-not-allowed transform-none shadow-none' 
-                        : 'bg-gradient-to-r from-brand-500 to-brand-600 text-white hover:brightness-110 active:scale-95 hover:shadow-brand-500/30'
+                        : isError 
+                          ? 'bg-red-500 text-white hover:bg-red-600 shadow-red-500/30'
+                          : 'bg-gradient-to-r from-brand-500 to-brand-600 text-white hover:brightness-110 active:scale-95 hover:shadow-brand-500/30'
                     }
                 `}
                 >
@@ -333,6 +336,11 @@ export const MenuForm: React.FC<MenuFormProps> = ({ onSubmit, status }) => {
                     <>
                         <Lock size={20} />
                         Preencha para Gerar
+                    </>
+                ) : isError ? (
+                    <>
+                        <AlertTriangle size={24} />
+                        Tentar Novamente
                     </>
                 ) : (
                     <>

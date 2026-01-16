@@ -24,15 +24,15 @@ const generateImageWithFallback = async (data: CreativeData, refinement?: ImageR
   
   if (data.customImage) return data.customImage;
 
-  // Constrói o prompt base
-  const basePrompt = buildImagePrompt(data, refinement);
+  // Prompt completo para Imagen
+  const fullPrompt = buildImagePrompt(data, refinement, true);
 
   try {
     // 1. TENTATIVA PRINCIPAL: Imagen 3.0 (Melhor qualidade visual)
     console.log("Tentando gerar com Imagen 3.0...");
     const response = await ai.models.generateImages({
       model: 'imagen-3.0-generate-001',
-      prompt: basePrompt,
+      prompt: fullPrompt,
       config: {
         numberOfImages: 1,
         outputMimeType: 'image/jpeg',
@@ -46,63 +46,108 @@ const generateImageWithFallback = async (data: CreativeData, refinement?: ImageR
     throw new Error("Imagen retornou vazio.");
 
   } catch (error: any) {
-    console.warn("Imagen 3.0 falhou, ativando fallback para Gemini 2.5 Flash Image...", error.message);
+    console.warn("Imagen 3.0 falhou. Tentando fallback...", error.message);
     
-    // 2. TENTATIVA SECUNDÁRIA: Gemini 2.5 Flash Image (Mais compatível)
+    // 2. TENTATIVA SECUNDÁRIA: Gemini 2.5 Flash Image 
+    const simplePrompt = buildImagePrompt(data, refinement, false);
+    
     try {
       const fallbackResponse = await ai.models.generateContent({
         model: 'gemini-2.5-flash-image',
         contents: {
-          parts: [{ text: basePrompt }]
+          parts: [{ text: simplePrompt }]
         },
-        config: {
-          // Flash image não usa responseMimeType para imagens, ele retorna inlineData
-        }
       });
 
-      // Procurar por partes de imagem na resposta
-      for (const candidate of fallbackResponse.candidates || []) {
-        for (const part of candidate.content.parts) {
+      if (fallbackResponse.candidates && fallbackResponse.candidates.length > 0) {
+        for (const part of fallbackResponse.candidates[0].content.parts) {
           if (part.inlineData && part.inlineData.data) {
-             return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+             const mime = part.inlineData.mimeType || 'image/png';
+             return `data:${mime};base64,${part.inlineData.data}`;
           }
         }
       }
       
-      throw new Error("Gemini Flash também não retornou imagem.");
+      const textResponse = fallbackResponse.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (textResponse) {
+        throw new Error(`O modelo recusou gerar a imagem: ${textResponse}`);
+      }
+      throw new Error("O modelo não retornou dados de imagem.");
 
     } catch (fallbackError: any) {
       console.error("Erro fatal em ambos os modelos:", fallbackError);
-      // Lança o erro original para o usuário saber que a chave pode estar inválida
-      throw new Error(`Falha na Geração: ${error.message} || Fallback: ${fallbackError.message}`);
+      throw new Error(`Falha na IA. Tente simplificar a descrição do prato.`);
     }
   }
 };
 
-const buildImagePrompt = (data: CreativeData, refinement?: ImageRefinement): string => {
-  let styleKeywords = "";
-  switch (data.artStyle) {
-    case 'Minimalista': styleKeywords = "Minimalist photography, clean white background, soft shadows, high key lighting, sophisticated."; break;
-    case 'Luxo': styleKeywords = "Luxury food photography, dark moody background, golden lighting accents, elegant composition."; break;
-    case 'Vibrante': styleKeywords = "Pop art colors, high contrast, vivid saturation, energetic food plating, bright commercial lighting."; break;
-    case 'Rustico': styleKeywords = "Rustic wooden table, natural sunlight, organic textures, farm-to-table aesthetic."; break;
-    case 'Neon': styleKeywords = "Cyberpunk food art, neon lighting, dark background, futuristic glow."; break;
-    case 'Ilustracao': styleKeywords = "3D Pixar style food illustration, cute render, soft clay material, vibrant colors."; break;
-    default: styleKeywords = "Professional studio photography, 8k resolution, centered composition, sharp focus, cinematic commercial lighting."; break;
+const buildImagePrompt = (data: CreativeData, refinement?: ImageRefinement, isComplex: boolean = true): string => {
+  
+  // Prompt Simplificado para o Fallback (Gemini Flash)
+  if (!isComplex) {
+    return `Professional food photography, top-down view. A delicious plate of ${data.mainDish} featuring ${data.proteins}. High quality, photorealistic, restaurant menu style.`;
   }
 
-  let prompt = `
-    Professional Vertical Food Photography (9:16 Aspect Ratio).
-    SUBJECT: Delicious ${data.mainDish} with ${data.proteins}.
-    STYLE: ${styleKeywords}
-    COMPOSITION: Top-down or 45-degree angle, centered, leaving space at top and bottom for text overlays.
-    QUALITY: Award-winning food photography, 8k, highly detailed textures, steam rising, appetizing.
-  `;
+  // Configuração de Estilo Avançada para Imagen 3.0
+  let aestheticSettings = "";
+  
+  switch (data.artStyle) {
+    case 'Minimalista': 
+      aestheticSettings = `
+        STYLE: Minimalist Scandi-style food photography. 
+        LIGHTING: High-key, soft diffuse window light, very soft shadows.
+        BACKGROUND: Clean white marble or light gray matte surface.
+        COMPOSITION: Sophisticated plating, plenty of negative space, organized geometric arrangement.
+        MOOD: Clean, airy, modern, fresh.
+      `;
+      break;
+      
+    case 'Luxo': 
+      aestheticSettings = `
+        STYLE: High-end Fine Dining / Michelin Star aesthetic.
+        LIGHTING: Moody chiaroscuro lighting, dramatic shadows, spotlight on the food.
+        BACKGROUND: Dark slate, black stone, or dark rustic wood texture.
+        PROPS: Gold cutlery, crystal glass hints in background, elegant garnish.
+        MOOD: Expensive, exclusive, savory, rich.
+      `;
+      break;
+      
+    case 'Vibrante': 
+      aestheticSettings = `
+        STYLE: Pop-Art / Commercial Advertising style.
+        LIGHTING: Hard studio lighting, high contrast, distinct sharp shadows.
+        BACKGROUND: Solid colorful background (orange, yellow or blue) or vibrant tablecloth.
+        COLORS: High saturation, punchy colors, energetic.
+        MOOD: Fun, fast, delicious, loud.
+      `;
+      break;
+      
+    default: // Realista / Padrão
+      aestheticSettings = `
+        STYLE: Professional Commercial Food Photography.
+        LIGHTING: Natural 'Golden Hour' side lighting, warm tones.
+        BACKGROUND: Blurred restaurant table or wooden texture.
+        DETAILS: Steam rising (hot food), glisten on meat/sauce, water droplets on fresh salad.
+        LENS: 85mm macro lens, shallow depth of field (bokeh background).
+        MOOD: Appetizing, comforting, homemade, juicy.
+      `;
+      break;
+  }
 
-  if (data.discountBadge) prompt += `\nMood: Promotional, exciting, celebration.`;
+  // Construção do Prompt Final
+  let prompt = `
+    Create a stunning vertical (9:16 aspect ratio) food photograph.
+    
+    SUBJECT: A gourmet dish of **${data.mainDish}**.
+    INGREDIENTS VISIBLE: **${data.proteins}**.
+    
+    ${aestheticSettings}
+    
+    QUALITY: Award-winning photography, 8k resolution, highly detailed textures, sharp focus on the main protein, hyper-realistic, no text overlay, no watermarks.
+  `;
   
   if (refinement?.negativePrompt) {
-    prompt += `\nAvoid: ${refinement.negativePrompt}`;
+    prompt += `\nAVOID: ${refinement.negativePrompt}, distorted food, plastic look, blurry, oversaturated, text, logo.`;
   }
 
   return prompt;
@@ -113,17 +158,17 @@ const generateCaption = async (data: CreativeData): Promise<string> => {
 
   try {
     const pricesText = data.priceOptions?.map(p => `${p.label}: ${p.value}`).join(', ') || '';
-    const extrasText = data.additionalSideDishes?.filter(i => i.label).map(i => `${i.label} (+${i.value})`).join(', ') || '';
     
     const finalPrompt = `
-      Crie uma legenda de Instagram para o almoço do dia.
+      Atue como um Social Media de restaurante. Crie uma legenda de Instagram para vender este prato.
+      Seja curto, use quebras de linha e emojis.
+      
       Restaurante: "${data.brandName}".
       Prato: ${data.mainDish} (${data.proteins}).
       Preços: ${pricesText}.
-      Extras: ${extrasText}.
-      Contato: ${data.whatsapp}.
+      Contato/Delivery: ${data.whatsapp}.
       
-      Use emojis, seja persuasivo e curto. Foco na fome e no pedido imediato.
+      Call to Action: Incentive o pedido agora.
     `;
 
     const response = await ai.models.generateContent({
